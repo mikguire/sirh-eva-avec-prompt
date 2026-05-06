@@ -120,3 +120,13 @@ CRITÈRES   : Parcours complet execute sans blocage sur environnement de test.
 PRIORITÉ   : 🟡
 DEADLINE   : 4 jours
 ═══════════════════════════════════════════
+
+## 2026-05-06 — Délégation utilisateur « prochaines étapes »
+
+Mode : **2 agents max en parallèle** ; lots séquentiels pour limiter les conflits Git.
+
+| Lot | Agents | Focus |
+|-----|--------|--------|
+| A | `AGENT_DEVOPS_MAKEFILE` + `AGENT_BACKEND_LEAVE_BF` | Makefile racine + chaîne intégration documentée ; moteur congés BF |
+| B | `AGENT_PRODUCT_COMPLIANCE_SIGNOFF` + `AGENT_MOBILE_LEAVE_FLOW` | Doc checklist signature métier/juridique ; parcours Flutter congés |
+| C | `AGENT_QA_RELEASE_CI` | Couverture, CI, matrice release (après A/B si besoin de rebasing) |
