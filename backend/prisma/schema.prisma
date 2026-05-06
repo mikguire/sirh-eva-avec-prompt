@@ -1,0 +1,428 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  OFFBOARDED
+  ON_LEAVE
+}
+
+enum ContractType {
+  CDI
+  CDD
+  INTERN
+  FREELANCE
+}
+
+enum LeaveRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  WEBHOOK
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model Tenant {
+  id            String         @id @default(cuid())
+  name          String
+  slug          String         @unique
+  status        TenantStatus   @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  users         TenantUser[]
+  employees     Employee[]
+  contracts     Contract[]
+  departments   Department[]
+  positions     Position[]
+  leaveTypes    LeaveType[]
+  leaveRequests LeaveRequest[]
+  documents     Document[]
+  subscriptions Subscription[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  payrollBfLegalProfiles PayrollBfLegalProfile[]
+  payrollBfLegalVersions PayrollBfLegalVersion[]
+  payrollBfSimulations   PayrollBfSimulation[]
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  status       UserStatus   @default(INVITED)
+  mfaEnabled   Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  tenants      TenantUser[]
+  auditLogs    AuditLog[]   @relation("AuditActor")
+  sessions     UserSession[]
+  payrollBfSimulations PayrollBfSimulation[]
+}
+
+model TenantUser {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  roleId    String
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id])
+  overrides TenantUserPermission[]
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  tenantId    String?
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  members     TenantUser[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roles       RolePermission[]
+  userOverrides TenantUserPermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model TenantUserPermission {
+  tenantUserId  String
+  permissionId  String
+  isGranted     Boolean @default(true)
+  tenantUser    TenantUser @relation(fields: [tenantUserId], references: [id], onDelete: Cascade)
+  permission    Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([tenantUserId, permissionId])
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employees Employee[]
+
+  @@unique([tenantId, name])
+}
+
+model Position {
+  id        String   @id @default(cuid())
+  tenantId  String
+  title     String
+  createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employees Employee[]
+
+  @@unique([tenantId, title])
+}
+
+model Employee {
+  id           String         @id @default(cuid())
+  tenantId     String
+  employeeCode String?
+  workEmail    String
+  firstName    String
+  lastName     String
+  status       EmployeeStatus @default(ACTIVE)
+  departmentId String?
+  positionId   String?
+  hireDate     DateTime
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department   Department?    @relation(fields: [departmentId], references: [id])
+  position     Position?      @relation(fields: [positionId], references: [id])
+  contracts    Contract[]
+  leaveRequests LeaveRequest[]
+  documents    Document[]
+
+  @@unique([tenantId, workEmail])
+  @@index([tenantId, status])
+}
+
+model Contract {
+  id          String       @id @default(cuid())
+  tenantId    String
+  employeeId  String
+  type        ContractType
+  salaryCents Int
+  currency    String       @default("XOF")
+  startDate   DateTime
+  endDate     DateTime?
+  createdAt   DateTime     @default(now())
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee    Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, employeeId])
+}
+
+model LeaveType {
+  id          String   @id @default(cuid())
+  tenantId    String
+  code        String
+  label       String
+  defaultDays Int      @default(0)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  requests    LeaveRequest[]
+
+  @@unique([tenantId, code])
+}
+
+model LeaveRequest {
+  id           String             @id @default(cuid())
+  tenantId     String
+  employeeId   String
+  leaveTypeId  String
+  startDate    DateTime
+  endDate      DateTime
+  status       LeaveRequestStatus @default(PENDING)
+  approverId   String?
+  reason       String?
+  createdAt    DateTime           @default(now())
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee     Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType    LeaveType          @relation(fields: [leaveTypeId], references: [id])
+
+  @@index([tenantId, status])
+}
+
+model Document {
+  id            String   @id @default(cuid())
+  tenantId      String
+  employeeId    String?
+  bucket        String
+  objectKey     String
+  fileName      String
+  mimeType      String
+  sizeBytes     Int
+  uploadedById  String
+  createdAt     DateTime @default(now())
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee      Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, employeeId])
+}
+
+model Plan {
+  id                String   @id @default(cuid())
+  code              String   @unique
+  displayName       String
+  monthlyPriceCents Int
+  yearlyPriceCents  Int
+  maxEmployees      Int
+  createdAt         DateTime @default(now())
+  subscriptions     Subscription[]
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  tenantId              String
+  planId                String
+  status                SubscriptionStatus @default(TRIALING)
+  provider              String             @default("stripe")
+  providerCustomerId    String
+  providerSubscriptionId String            @unique
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  lastWebhookEventId    String?
+  tenant                Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan                  Plan               @relation(fields: [planId], references: [id])
+
+  @@index([tenantId, status])
+}
+
+model UserSession {
+  id           String   @id @default(cuid())
+  userId       String
+  tenantId     String
+  refreshToken String   @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, tenantId])
+}
+
+model Notification {
+  id         String             @id @default(cuid())
+  tenantId   String
+  userId     String?
+  channel    NotificationChannel
+  type       String
+  payload    Json
+  status     NotificationStatus @default(PENDING)
+  createdAt  DateTime           @default(now())
+  sentAt     DateTime?
+  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String
+  actorUserId String?
+  action      String
+  entityType  String
+  entityId    String?
+  beforeJson  Json?
+  afterJson   Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actor       User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+}
+
+model PayrollBfLegalProfile {
+  id          String   @id @default(cuid())
+  tenantId    String
+  code        String
+  label       String
+  currency    String   @default("XOF")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  versions    PayrollBfLegalVersion[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model PayrollBfLegalVersion {
+  id                   String   @id @default(cuid())
+  tenantId             String
+  legalProfileId       String
+  legalVersionId       String
+  effectiveStart       DateTime
+  effectiveEnd         DateTime?
+  cnssEmployeeRate     Decimal  @db.Decimal(6, 5)
+  cnssEmployerRate     Decimal  @db.Decimal(6, 5)
+  cnssCeilingXof       Int
+  carfoEmployeeRate    Decimal  @db.Decimal(6, 5)
+  carfoEmployerRate    Decimal  @db.Decimal(6, 5)
+  carfoEnabledRegimes  String[]
+  smigXof              Int
+  smigControlEnabled   Boolean  @default(true)
+  roundingMode         String   @default("ROUND_HALF_UP")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  legalProfile         PayrollBfLegalProfile @relation(fields: [legalProfileId], references: [id], onDelete: Cascade)
+  iutsBrackets         PayrollBfIutsBracket[]
+  simulations          PayrollBfSimulation[]
+
+  @@unique([tenantId, legalVersionId])
+  @@index([tenantId, legalProfileId, effectiveStart, effectiveEnd])
+}
+
+model PayrollBfIutsBracket {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  legalVersionId     String
+  ordinal            Int
+  lowerBoundXof      Int
+  upperBoundXof      Int?
+  rate               Decimal  @db.Decimal(6, 5)
+  createdAt          DateTime @default(now())
+  legalVersion       PayrollBfLegalVersion @relation(fields: [legalVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([legalVersionId, ordinal])
+  @@index([tenantId, legalVersionId])
+}
+
+model PayrollBfSimulation {
+  id                     String   @id @default(cuid())
+  tenantId               String
+  actorUserId            String?
+  payrollDate            DateTime
+  employeeRegime         String
+  legalProfileId         String
+  legalVersionId         String
+  baseSalaryXof          Int
+  taxableBonusXof        Int
+  taxableOvertimeXof     Int
+  nontaxableAllowanceXof Int
+  grossXof               Int
+  cnssEmployeeXof        Int
+  cnssEmployerXof        Int
+  iutsXof                Int
+  carfoEmployeeXof       Int
+  carfoEmployerXof       Int
+  netXof                 Int
+  currency               String   @default("XOF")
+  createdAt              DateTime @default(now())
+  tenant                 Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actor                  User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  legalVersion           PayrollBfLegalVersion @relation(fields: [legalVersionId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, createdAt])
+}

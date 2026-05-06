@@ -1,0 +1,37 @@
+# Développement local SIRH EVA — API + Postgres + Redis.
+# Usage : depuis la racine du repo → `docker compose up -d`
+# Si « bind: address already in use » sur 5432 (Postgres local) :
+#   `EVA_POSTGRES_PORT=5433 docker compose up -d`
+# Puis : `cd backend && cp .env.example .env` (adapter DATABASE_URL : port si différent de 5432).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: eva-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: eva_test
+    ports:
+      - "${EVA_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - eva_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d eva_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: eva-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  eva_pgdata:

@@ -1,0 +1,8 @@
+.dart_tool/
+.packages
+build/
+*.iml
+.idea/
+
+# Génération Riverpod (si utilisée plus tard)
+*.g.dart

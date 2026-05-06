@@ -1,0 +1,29 @@
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# Node / JS
+node_modules/
+backend/node_modules/
+design-system/node_modules/
+dist/
+coverage/
+backend/dist/
+backend/coverage/
+
+# Build artifacts
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+
+# Flutter / mobile build
+mobile/.dart_tool/
+mobile/build/
+
+# IDE
+.idea/
+.vscode/

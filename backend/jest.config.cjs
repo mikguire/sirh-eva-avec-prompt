@@ -1,0 +1,23 @@
+/** @type {import("jest").Config} */
+module.exports = {
+  moduleFileExtensions: ["js", "json", "ts"],
+  rootDir: "src",
+  testRegex: ".*\\.spec\\.ts$",
+  transform: {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  collectCoverageFrom: ["**/*.(t|j)s", "!**/*.module.ts", "!main.ts"],
+  coverageDirectory: "../coverage",
+  testEnvironment: "node",
+  forceExit: true,
+  modulePaths: ["<rootDir>"],
+  coveragePathIgnorePatterns: ["/node_modules/", "\\.spec\\.ts$"],
+  coverageThreshold: {
+    global: {
+      branches: 32,
+      functions: 45,
+      lines: 48,
+      statements: 48
+    }
+  }
+};
