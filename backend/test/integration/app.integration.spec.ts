@@ -14,6 +14,13 @@ import { seedIntegrationWorld, tearDownIntegrationWorld, type IntegrationWorld }
 const backendRoot = path.join(__dirname, "..", "..");
 dotenv.config({ path: path.join(backendRoot, ".env") });
 
+/** Aligné sur docker-compose racine : postgres/postgres, DB eva_test, port hôte 5432 par défaut */
+const DEFAULT_INTEGRATION_DATABASE_URL =
+  "postgresql://postgres:postgres@127.0.0.1:5432/eva_test";
+
+process.env.DATABASE_URL =
+  process.env.INTEGRATION_DATABASE_URL?.trim() || DEFAULT_INTEGRATION_DATABASE_URL;
+
 const prismaCli = path.join(backendRoot, "node_modules", ".bin", "prisma");
 const tsNodeCli = path.join(backendRoot, "node_modules", ".bin", "ts-node");
 
@@ -92,9 +99,6 @@ describeIntegration("Integration (HTTP + DB)", () => {
   let stripeSecret: string;
 
   beforeAll(async () => {
-    if (!process.env.DATABASE_URL) {
-      process.env.DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:5432/eva_test";
-    }
     process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? "dev-access-secret-change-me-in-env-32chars";
     process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? "dev-refresh-secret-change-me-in-env-32chars";
     const envStripe = process.env.STRIPE_WEBHOOK_SECRET;

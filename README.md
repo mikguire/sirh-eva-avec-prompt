@@ -27,7 +27,7 @@ npm run start:dev
 
 - OpenAPI : `http://localhost:3000/api/docs`
 - Tests unitaires : `npm test`
-- Tests d’intégration (DB `eva_test`) : `npm run test:int`
+- Tests d’intégration (DB `eva_test`) : `npm run test:int` — URL Postgres des tests : par défaut `postgres/postgres@127.0.0.1:5432/eva_test` (voir `backend/README.md`, surcharge `INTEGRATION_DATABASE_URL`).
 
 ### Mobile (Flutter)
 

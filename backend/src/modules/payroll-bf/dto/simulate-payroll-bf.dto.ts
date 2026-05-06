@@ -36,6 +36,38 @@ export class SimulatePayrollBfDto {
   @IsOptional()
   nontaxableAllowanceXof?: number;
 
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  housingAllowanceXof?: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  functionAllowanceXof?: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  transportAllowanceXof?: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  numberOfChildren?: number;
+
+  @IsString()
+  @IsOptional()
+  maritalStatus?: string;
+
+  @Type(() => Boolean)
+  @IsOptional()
+  isCadre?: boolean;
+
   @IsString()
   legalProfileId!: string;
 }

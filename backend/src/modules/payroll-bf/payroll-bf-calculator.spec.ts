@@ -19,7 +19,7 @@ const buildParams = (overrides?: Partial<{
   legalVersionId: overrides?.legalVersionId ?? "BF-2026-01",
   cnssEmployeeRate: new Prisma.Decimal(overrides?.cnssEmployeeRate ?? "0.055"),
   cnssEmployerRate: new Prisma.Decimal(overrides?.cnssEmployerRate ?? "0.16"),
-  cnssCeilingXof: overrides?.cnssCeilingXof ?? 1_000_000,
+  cnssCeilingXof: overrides?.cnssCeilingXof ?? 800_000,
   carfoEmployeeRate: new Prisma.Decimal(overrides?.carfoEmployeeRate ?? "0.08"),
   carfoEmployerRate: new Prisma.Decimal(overrides?.carfoEmployerRate ?? "0.12"),
   carfoEnabledRegimes: overrides?.carfoEnabledRegimes ?? ["PUBLIC_CARFO"],
@@ -28,9 +28,12 @@ const buildParams = (overrides?: Partial<{
   roundingMode: overrides?.roundingMode ?? "ROUND_HALF_UP",
   iutsBrackets: (overrides?.iutsBrackets ?? [
     { lowerBoundXof: 0, upperBoundXof: 30_000, rate: "0.00" },
-    { lowerBoundXof: 30_000, upperBoundXof: 50_000, rate: "0.12" },
-    { lowerBoundXof: 50_000, upperBoundXof: 80_000, rate: "0.20" },
-    { lowerBoundXof: 80_000, upperBoundXof: null, rate: "0.25" }
+    { lowerBoundXof: 30_000, upperBoundXof: 50_000, rate: "0.121" },
+    { lowerBoundXof: 50_000, upperBoundXof: 80_000, rate: "0.139" },
+    { lowerBoundXof: 80_000, upperBoundXof: 120_000, rate: "0.157" },
+    { lowerBoundXof: 120_000, upperBoundXof: 170_000, rate: "0.184" },
+    { lowerBoundXof: 170_000, upperBoundXof: 250_000, rate: "0.217" },
+    { lowerBoundXof: 250_000, upperBoundXof: null, rate: "0.25" }
   ]).map((item) => ({
     lowerBoundXof: item.lowerBoundXof,
     upperBoundXof: item.upperBoundXof,
@@ -48,15 +51,21 @@ describe("PayrollBfCalculator", () => {
         baseSalaryXof: 100_000,
         taxableBonusXof: 0,
         taxableOvertimeXof: 0,
-        nontaxableAllowanceXof: 0
+        nontaxableAllowanceXof: 0,
+        housingAllowanceXof: 0,
+        functionAllowanceXof: 0,
+        transportAllowanceXof: 0,
+        numberOfChildren: 0,
+        maritalStatus: "celibataire",
+        isCadre: false
       },
       buildParams()
     );
 
     expect(output.cnssEmployeeXof).toBe(5_500);
     expect(output.cnssEmployerXof).toBe(16_000);
-    expect(output.iutsXof).toBe(12_025);
-    expect(output.netPayXof).toBe(82_475);
+    expect(output.iutsXof).toBe(5_131);
+    expect(output.netPayXof).toBe(89_369);
   });
 
   it("applies CNSS ceiling", () => {
@@ -66,14 +75,20 @@ describe("PayrollBfCalculator", () => {
         baseSalaryXof: 1_200_000,
         taxableBonusXof: 0,
         taxableOvertimeXof: 0,
-        nontaxableAllowanceXof: 0
+        nontaxableAllowanceXof: 0,
+        housingAllowanceXof: 0,
+        functionAllowanceXof: 0,
+        transportAllowanceXof: 0,
+        numberOfChildren: 0,
+        maritalStatus: "celibataire",
+        isCadre: false
       },
       buildParams()
     );
 
-    expect(output.cnssBaseXof).toBe(1_000_000);
-    expect(output.cnssEmployeeXof).toBe(55_000);
-    expect(output.cnssEmployerXof).toBe(160_000);
+    expect(output.cnssBaseXof).toBe(800_000);
+    expect(output.cnssEmployeeXof).toBe(44_000);
+    expect(output.cnssEmployerXof).toBe(128_000);
   });
 
   it("activates CARFO only for PUBLIC_CARFO", () => {
@@ -83,14 +98,20 @@ describe("PayrollBfCalculator", () => {
         baseSalaryXof: 150_000,
         taxableBonusXof: 0,
         taxableOvertimeXof: 0,
-        nontaxableAllowanceXof: 0
+        nontaxableAllowanceXof: 0,
+        housingAllowanceXof: 0,
+        functionAllowanceXof: 0,
+        transportAllowanceXof: 0,
+        numberOfChildren: 0,
+        maritalStatus: "celibataire",
+        isCadre: false
       },
       buildParams()
     );
 
     expect(output.carfoEmployeeXof).toBe(12_000);
     expect(output.carfoEmployerXof).toBe(18_000);
-    expect(output.netPayXof).toBe(108_912);
+    expect(output.netPayXof).toBe(119_361);
   });
 
   it("adds non taxable allowance to net pay", () => {
@@ -100,12 +121,18 @@ describe("PayrollBfCalculator", () => {
         baseSalaryXof: 120_000,
         taxableBonusXof: 0,
         taxableOvertimeXof: 0,
-        nontaxableAllowanceXof: 10_000
+        nontaxableAllowanceXof: 10_000,
+        housingAllowanceXof: 0,
+        functionAllowanceXof: 0,
+        transportAllowanceXof: 0,
+        numberOfChildren: 0,
+        maritalStatus: "celibataire",
+        isCadre: false
       },
       buildParams()
     );
 
-    expect(output.netPayXof).toBe(106_650);
+    expect(output.netPayXof).toBe(116_276);
   });
 
   it("rounds half up deterministically", () => {
@@ -115,7 +142,13 @@ describe("PayrollBfCalculator", () => {
         baseSalaryXof: 10,
         taxableBonusXof: 0,
         taxableOvertimeXof: 0,
-        nontaxableAllowanceXof: 0
+        nontaxableAllowanceXof: 0,
+        housingAllowanceXof: 0,
+        functionAllowanceXof: 0,
+        transportAllowanceXof: 0,
+        numberOfChildren: 0,
+        maritalStatus: "celibataire",
+        isCadre: false
       },
       buildParams({
         smigControlEnabled: false,
@@ -136,7 +169,13 @@ describe("PayrollBfCalculator", () => {
         baseSalaryXof: 100_000,
         taxableBonusXof: 0,
         taxableOvertimeXof: 0,
-        nontaxableAllowanceXof: 0
+        nontaxableAllowanceXof: 0,
+        housingAllowanceXof: 0,
+        functionAllowanceXof: 0,
+        transportAllowanceXof: 0,
+        numberOfChildren: 0,
+        maritalStatus: "celibataire",
+        isCadre: false
       },
       buildParams({
         legalVersionId: "BF-2025-01",
@@ -153,8 +192,8 @@ describe("PayrollBfCalculator", () => {
     expect(output.legalVersionId).toBe("BF-2025-01");
     expect(output.cnssEmployeeXof).toBe(5_000);
     expect(output.cnssEmployerXof).toBe(15_000);
-    expect(output.iutsXof).toBe(10_000);
-    expect(output.netPayXof).toBe(85_000);
+    expect(output.iutsXof).toBe(5_000);
+    expect(output.netPayXof).toBe(90_000);
   });
 
   it("rejects below SMIG when control is enabled", () => {
@@ -165,7 +204,13 @@ describe("PayrollBfCalculator", () => {
           baseSalaryXof: 40_000,
           taxableBonusXof: 0,
           taxableOvertimeXof: 0,
-          nontaxableAllowanceXof: 0
+          nontaxableAllowanceXof: 0,
+          housingAllowanceXof: 0,
+          functionAllowanceXof: 0,
+          transportAllowanceXof: 0,
+          numberOfChildren: 0,
+          maritalStatus: "celibataire",
+          isCadre: false
         },
         buildParams()
       )
@@ -179,12 +224,43 @@ describe("PayrollBfCalculator", () => {
         baseSalaryXof: 40_000,
         taxableBonusXof: 0,
         taxableOvertimeXof: 0,
-        nontaxableAllowanceXof: 0
+        nontaxableAllowanceXof: 0,
+        housingAllowanceXof: 0,
+        functionAllowanceXof: 0,
+        transportAllowanceXof: 0,
+        numberOfChildren: 0,
+        maritalStatus: "celibataire",
+        isCadre: false
       },
       buildParams({ smigControlEnabled: false })
     );
 
     expect(output.smigCompliance).toBe(false);
     expect(output.smigGapXof).toBe(5_000);
+  });
+
+  it("applies normative exemptions, child abatements and family reductions", () => {
+    const output = calculator.calculate(
+      {
+        employeeRegime: PayrollBfEmployeeRegime.PRIVE,
+        baseSalaryXof: 200_000,
+        taxableBonusXof: 10_000,
+        taxableOvertimeXof: 0,
+        nontaxableAllowanceXof: 0,
+        housingAllowanceXof: 50_000,
+        functionAllowanceXof: 0,
+        transportAllowanceXof: 20_000,
+        numberOfChildren: 2,
+        maritalStatus: "celibataire",
+        isCadre: false
+      },
+      buildParams()
+    );
+
+    expect(output.grossTaxableXof).toBe(280_000);
+    expect(output.cnssEmployeeXof).toBe(15_400);
+    expect(output.iutsTaxableBaseXof).toBe(138_800);
+    expect(output.iutsXof).toBe(14_696);
+    expect(output.netPayXof).toBe(249_904);
   });
 });

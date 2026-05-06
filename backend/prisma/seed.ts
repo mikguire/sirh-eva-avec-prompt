@@ -104,7 +104,7 @@ async function main(): Promise<void> {
       effectiveEnd: null,
       cnssEmployeeRate: "0.055",
       cnssEmployerRate: "0.16",
-      cnssCeilingXof: 1_000_000,
+      cnssCeilingXof: 800_000,
       carfoEmployeeRate: "0.08",
       carfoEmployerRate: "0.12",
       carfoEnabledRegimes: ["PUBLIC_CARFO"],
@@ -113,9 +113,12 @@ async function main(): Promise<void> {
       roundingMode: "ROUND_HALF_UP",
       iutsBrackets: [
         { ordinal: 1, lowerBoundXof: 0, upperBoundXof: 30_000, rate: "0.00" },
-        { ordinal: 2, lowerBoundXof: 30_000, upperBoundXof: 50_000, rate: "0.12" },
-        { ordinal: 3, lowerBoundXof: 50_000, upperBoundXof: 80_000, rate: "0.20" },
-        { ordinal: 4, lowerBoundXof: 80_000, upperBoundXof: null, rate: "0.25" }
+        { ordinal: 2, lowerBoundXof: 30_000, upperBoundXof: 50_000, rate: "0.121" },
+        { ordinal: 3, lowerBoundXof: 50_000, upperBoundXof: 80_000, rate: "0.139" },
+        { ordinal: 4, lowerBoundXof: 80_000, upperBoundXof: 120_000, rate: "0.157" },
+        { ordinal: 5, lowerBoundXof: 120_000, upperBoundXof: 170_000, rate: "0.184" },
+        { ordinal: 6, lowerBoundXof: 170_000, upperBoundXof: 250_000, rate: "0.217" },
+        { ordinal: 7, lowerBoundXof: 250_000, upperBoundXof: null, rate: "0.25" }
       ]
     }
   ];

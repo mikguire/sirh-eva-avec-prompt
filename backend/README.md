@@ -72,10 +72,13 @@ backend/
    - `npm test`
 9. Couverture (seuil global lignes ≥ 48 %, voir `jest.config.cjs`) :
    - `npm run test:cov`
-10. Tests d’intégration (PostgreSQL requis, ex. `docker compose up -d` + base `eva_test`) :
+10. Tests d’intégration (PostgreSQL requis, ex. `docker compose up -d --wait` + base `eva_test`) :
    - `npm run test:integration` (alias conservé: `npm run test:int`)  
-   - **`backend/.env`** est chargé automatiquement au démarrage du fichier de tests : une **`DATABASE_URL`** y définie prime sur la valeur par défaut (`postgres`/`postgres` sur `127.0.0.1:5432` / `eva_test`). Si Prisma affiche **P1000 (Authentication failed)**, soit les identifiants du conteneur Docker ne correspondent pas à votre Postgres local, soit votre **`.env`** pointe vers un mauvais mot de passe — alignez **`DATABASE_URL`** avec le serveur réel.  
-   - Si la base n’est pas joignable, le `beforeAll` échoue avec un message explicite (sortie Prisma incluse pour **migrate deploy** / **seed**).  
+   - Le script exécute automatiquement : **db check TCP** → **`prisma migrate deploy`** → **`prisma seed`** → **Jest integration**.
+   - **`DATABASE_URL` pour l’intégration** : par défaut **`postgresql://postgres:postgres@127.0.0.1:5432/eva_test`** (aligné sur `docker-compose.yml`), pour éviter qu’un `DATABASE_URL` métier dans **`backend/.env`** ne fasse échouer la suite (**P1000**). Surcharge : **`INTEGRATION_DATABASE_URL`** (variable d’environnement).
+   - **`backend/.env`** reste chargé pour JWT / Stripe / autres secrets ; seule l’URL Postgres des tests d’intégration suit la règle ci-dessus.
+   - En cas d’échec **P1000 (Authentication failed)**, vérifiez que Postgres tourne (`docker compose up -d`) et que **`INTEGRATION_DATABASE_URL`** (si défini) correspond aux identifiants du conteneur (`EVA_POSTGRES_*`).
+   - Si la base n’est pas joignable, `npm run db:check` échoue avec une erreur actionnable (hôte/port visés + action Docker suggérée).  
    - Sans Postgres local : **`SKIP_INT=1 npm run test:integration`** saute toute la suite (utile pour un contrôle rapide du pipeline sans Docker).
    - Scénarios sécurité/conformité couverts: auth nominale + rotation refresh (ancien token invalide), isolement tenant (`x-tenant-id` vs JWT), refus RBAC (`payroll.simulate`), rejet webhook Stripe signature invalide, et simulation paie BF (champs métier attendus).
 

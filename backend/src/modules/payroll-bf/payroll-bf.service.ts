@@ -46,7 +46,13 @@ export class PayrollBfService {
         baseSalaryXof: dto.baseSalaryXof,
         taxableBonusXof: dto.taxableBonusXof ?? 0,
         taxableOvertimeXof: dto.taxableOvertimeXof ?? 0,
-        nontaxableAllowanceXof: dto.nontaxableAllowanceXof ?? 0
+        nontaxableAllowanceXof: dto.nontaxableAllowanceXof ?? 0,
+        housingAllowanceXof: dto.housingAllowanceXof ?? 0,
+        functionAllowanceXof: dto.functionAllowanceXof ?? 0,
+        transportAllowanceXof: dto.transportAllowanceXof ?? 0,
+        numberOfChildren: dto.numberOfChildren ?? 0,
+        maritalStatus: dto.maritalStatus,
+        isCadre: dto.isCadre ?? false
       },
       {
         legalVersionId: legalVersion.legalVersionId,
