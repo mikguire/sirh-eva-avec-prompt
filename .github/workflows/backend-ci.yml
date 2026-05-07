@@ -1,3 +1,13 @@
+# Backend CI — voir aussi backend/README.md (tests / SKIP_INT).
+#
+# Résumé des commandes npm reflétées dans les jobs :
+#   - `npm run build` : job unit-build (après prisma generate).
+#   - Unitaires : `npm run test:cov` exécute la même suite que `npm test` + seuils
+#     `coverageThreshold` dans jest.config.cjs (sans PostgreSQL).
+#   - Intégration : `npm run test:int` (alias de test:integration), job séparé avec
+#     service Postgres ; migrate deploy + seed via test:integration:prepare.
+#     En local uniquement : SKIP_INT=1 pour ignorer les specs d’intégration — pas utilisé en CI.
+
 name: Backend CI
 
 on:
@@ -15,8 +25,40 @@ defaults:
     working-directory: backend
 
 jobs:
-  build-test:
+  unit-build:
+    name: Unit tests & build
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      JWT_ACCESS_SECRET: ci-access-secret-must-be-32-chars-minimum
+      JWT_REFRESH_SECRET: ci-refresh-secret-must-be-32-chars-minimum
+      STRIPE_WEBHOOK_SECRET: whsec_ci_test_secret_32_characters___
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Build (npm run build)
+        run: npm run build
+
+      - name: Unit tests + coverage (npm run test:cov)
+        run: npm run test:cov
+
+  integration-tests:
+    name: Integration tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    needs: unit-build
     services:
       postgres:
         image: postgres:16-alpine
@@ -45,21 +87,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Build
-        run: npm run build
-
-      - name: Unit tests
-        run: npm test
-
-      - name: Coverage (seuils jest.config.cjs)
-        run: npm run test:cov
-
-      - name: Integration tests
+      - name: Integration tests (npm run test:int)
         run: npm run test:int

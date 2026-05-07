@@ -50,6 +50,15 @@ function titleForHttpStatus(status: number): string {
   }
 }
 
+function extractEvCodeFromPayload(payload: string | object): string | undefined {
+  if (typeof payload === "string") {
+    return undefined;
+  }
+  const body = payload as Record<string, unknown>;
+  const code = body["ev:code"];
+  return typeof code === "string" ? code : undefined;
+}
+
 function detailFromHttpPayload(payload: string | object, fallbackMessage: string): string {
   if (typeof payload === "string") {
     return payload;
@@ -85,7 +94,9 @@ export class ProblemDetailsExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       title = titleForHttpStatus(status);
-      detail = detailFromHttpPayload(exception.getResponse(), exception.message);
+      const payload = exception.getResponse();
+      evCode = extractEvCodeFromPayload(payload);
+      detail = detailFromHttpPayload(payload, exception.message);
     } else if (exception instanceof PrismaClientKnownRequestError) {
       if (exception.code === "P2002") {
         status = HttpStatus.CONFLICT;

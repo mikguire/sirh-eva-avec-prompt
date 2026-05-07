@@ -1,5 +1,18 @@
 # Changelog reglementaire paie BF
 
+## 2026-05-06 — Cadre Sign-off et inventaire figé / juridique
+
+Type de changement: `DOCUMENTATION` (aucune modification des parametres normatifs du gel metier)
+
+Evolutions:
+- Ajout section **Sign-off** dans `docs/compliance-bf.md`: tableau de validation CNSS, IUTS, CARFO, SMIG, arrondis, ordre de calcul, coexistence des retenues; lignes nom / fonction / date / signature.
+- Ajout section **Figé vs A_VALIDER_JURIDIQUE**: inventaire explicite des parametres deja figes et des points encore soumis a validation juridique formelle.
+- Extension checklist section 5 avec ligne **Coexistence retenues** (criteres testables QA).
+
+Pas d'impact sur les valeurs numeriques ou l'ordre normatif deja publiés dans la baseline du meme jour.
+
+---
+
 ## 2026-05-06 — Gel metier release candidate
 
 Type de changement: `BASELINE`

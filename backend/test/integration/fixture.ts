@@ -135,7 +135,8 @@ export async function seedIntegrationWorld(prisma: PrismaClient): Promise<Integr
       firstName: "Emp",
       lastName: "Loyee",
       hireDate: new Date("2024-01-15"),
-      status: "ACTIVE"
+      status: "ACTIVE",
+      linkedUserId: user.id
     }
   });
 
@@ -180,7 +181,7 @@ export async function seedIntegrationWorld(prisma: PrismaClient): Promise<Integr
       effectiveEnd: null,
       cnssEmployeeRate: "0.055",
       cnssEmployerRate: "0.16",
-      cnssCeilingXof: 1_000_000,
+      cnssCeilingXof: 800_000,
       carfoEmployeeRate: "0.08",
       carfoEmployerRate: "0.12",
       carfoEnabledRegimes: ["PUBLIC_CARFO"],
@@ -192,9 +193,12 @@ export async function seedIntegrationWorld(prisma: PrismaClient): Promise<Integr
   await prisma.payrollBfIutsBracket.createMany({
     data: [
       { tenantId: tenant.id, legalVersionId: legalVersion.id, ordinal: 1, lowerBoundXof: 0, upperBoundXof: 30_000, rate: "0.00" },
-      { tenantId: tenant.id, legalVersionId: legalVersion.id, ordinal: 2, lowerBoundXof: 30_000, upperBoundXof: 50_000, rate: "0.12" },
-      { tenantId: tenant.id, legalVersionId: legalVersion.id, ordinal: 3, lowerBoundXof: 50_000, upperBoundXof: 80_000, rate: "0.20" },
-      { tenantId: tenant.id, legalVersionId: legalVersion.id, ordinal: 4, lowerBoundXof: 80_000, upperBoundXof: null, rate: "0.25" }
+      { tenantId: tenant.id, legalVersionId: legalVersion.id, ordinal: 2, lowerBoundXof: 30_000, upperBoundXof: 50_000, rate: "0.121" },
+      { tenantId: tenant.id, legalVersionId: legalVersion.id, ordinal: 3, lowerBoundXof: 50_000, upperBoundXof: 80_000, rate: "0.139" },
+      { tenantId: tenant.id, legalVersionId: legalVersion.id, ordinal: 4, lowerBoundXof: 80_000, upperBoundXof: 120_000, rate: "0.157" },
+      { tenantId: tenant.id, legalVersionId: legalVersion.id, ordinal: 5, lowerBoundXof: 120_000, upperBoundXof: 170_000, rate: "0.184" },
+      { tenantId: tenant.id, legalVersionId: legalVersion.id, ordinal: 6, lowerBoundXof: 170_000, upperBoundXof: 250_000, rate: "0.217" },
+      { tenantId: tenant.id, legalVersionId: legalVersion.id, ordinal: 7, lowerBoundXof: 250_000, upperBoundXof: null, rate: "0.25" }
     ]
   });
 
@@ -211,11 +215,14 @@ export async function seedIntegrationWorld(prisma: PrismaClient): Promise<Integr
     planId: plan.id,
     subscriptionId: subscription.id,
     stripeSubscriptionId: STRIPE_SUB_ID,
-    payrollLegalProfileId: legalProfile.id
+    payrollLegalProfileId: legalProfile.code
   };
 }
 
 export async function tearDownIntegrationWorld(prisma: PrismaClient, world: IntegrationWorld): Promise<void> {
+  await prisma.leavePaidAcquisition.deleteMany({ where: { tenantId: world.tenantId } });
+  await prisma.employeePaidLeaveBalance.deleteMany({ where: { tenantId: world.tenantId } });
+  await prisma.tenantLeavePolicy.deleteMany({ where: { tenantId: world.tenantId } });
   await prisma.leaveRequest.deleteMany({ where: { tenantId: world.tenantId } });
   await prisma.payrollBfSimulation.deleteMany({ where: { tenantId: world.tenantId } });
   await prisma.payrollBfIutsBracket.deleteMany({ where: { tenantId: world.tenantId } });

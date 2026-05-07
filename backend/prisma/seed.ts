@@ -8,6 +8,8 @@ const permissionKeys = [
   "leave.read",
   "leave.write",
   "leave.approve",
+  "leave.balance.read",
+  "leave.balance.read_any",
   "payroll.simulate",
   "billing.manage",
   "audit.read",

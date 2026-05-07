@@ -108,8 +108,52 @@ Statut: `A_COMPLETER_PAR_METIER_ET_JURIDIQUE`
 | SMIG | verifier qu'aucun bulletin final ne passe sous la contrainte SMIG applicable (si regle activee metier) | controle lot paie + seuil officiel annexe | [ ] | |
 | Arrondis | verifier la convention unique d'arrondi sur chaque rubrique cible | tableau de reconciliation calculatrice/outil | [ ] | |
 | Ordre des calculs | verifier sequence normative section 3 sans permutation | test de non-regression sur cas de reference | [ ] | |
+| Coexistence retenues | verifier ordre et cumul conformes section 3 et points section 4 (1%, FSP, AMU, autres) | scenario QA multi-retenues + arbitrage juridique | [ ] | |
 
-## 6) Cas de reference obligatoire
+## 6) Sign-off (signature metier / juridique)
+
+Objectif: constat formel sur la **norme figee** de ce document, independamment de l'implementation technique.
+
+| Domaine | Criteres de validation (testables QA) | Valide |
+|---|---|:---:|
+| **CNSS** | Conformite section 2.1: `5.5%` salariale sur `min(brut, 800_000)`, `16%` patronale mode EVA, arrondis tels que decrits. | [ ] |
+| **IUTS** | Conformite section 2.2: bareme progressif, charges famille `0/8/10/12/14%`, abattement enfants (max 3), base `floor(RNI/100)*100`. | [ ] |
+| **CARFO** | Conformite section 2.4: `8%` sur base indiciaire, **uniquement** secteur public; absence sur cas prive. | [ ] |
+| **SMIG** | Si regle SMIG activee metier: **aucun** net en dessous du seuil officiel en vigueur (controle lot + piece annexe au seuil). | [ ] |
+| **Arrondis** | Convention unique d'arrondi entier (voir section 4 si non encore levee) + reconciliation avec extrait QA rubrique par rubrique. | [ ] |
+| **Ordre de calcul** | Application stricte de la sequence section 3, sans permutation ni saut d'etape. | [ ] |
+| **Coexistence retenues** | Ordre et cumul des retenues (y compris `1%`, FSP, AMU, autres obligatoires) conformes a section 3 et arbitrage section 4 une fois leve. | [ ] |
+
+Engagement signataire (a completer):
+
+| Champ | Valeur |
+|---|---|
+| **Nom** |  |
+| **Fonction** (metier / juridique / DAF / RH) |  |
+| **Date** |  |
+| **Signature** |  |
+
+## 7) Fige dans ce document vs A_VALIDER_JURIDIQUE
+
+**Parametres et regles deja figes (executables QA; gel metier du document)** - non exhaustif, voir sections 2 a 3:
+
+| Zone | Reference |
+|---|---|
+| CNSS salariale / patronale / plafond | Section 2.1 |
+| Bareme IUTS, charges, abattements enfants, base centaine | Section 2.2 |
+| Abattements FP, exonerations logement/fonction/transport | Section 2.3 |
+| TPA `3%`, retenue `1%`, CARFO `8%` public | Section 2.4 |
+| Sequence d'ordre de calcul de reference | Section 3 |
+
+**Reste explicitement `A_VALIDER_JURIDIQUE` (bloquant go-live legal tant que non leve)** - detail section 4:
+
+| Sujet | Test / preuve attendue cote QA |
+|---|---|
+| CNSS patronale sans plafond (mode EVA) | Jeux de cas `brut` eleve + accord ecrit sur l'assiette patronale |
+| Convention d'arrondi **unique** sur toutes rubriques monetaires | Matrice rubrique x methode d'arrondi signee + egalite avec declarations |
+| Coexistence et ordre des retenues (`1%`, FSP, AMU, autres) | Scenarios multi-retenues + decision juridique sur cumul et ordre |
+
+## 8) Cas de reference obligatoire
 
 Le cas suivant reste obligatoire pour QA non-regression:
 - Base `200_000`, primes `10_000`, logement `50_000`, transport `20_000`, `2` enfants, non cadre.

@@ -3,6 +3,7 @@
 # Si « bind: address already in use » sur 5432 (Postgres local) :
 #   `EVA_POSTGRES_PORT=5433 docker compose up -d`
 # Puis : `cd backend && cp .env.example .env` (adapter DATABASE_URL : port si différent de 5432).
+# Si vous personnalisez EVA_POSTGRES_USER/PASSWORD/PORT, alignez aussi INTEGRATION_DATABASE_URL pour `npm run test:integration`.
 
 services:
   postgres:

@@ -72,6 +72,9 @@ model Tenant {
   positions     Position[]
   leaveTypes    LeaveType[]
   leaveRequests LeaveRequest[]
+  leavePaidAcquisitions LeavePaidAcquisition[]
+  employeePaidLeaveBalances EmployeePaidLeaveBalance[]
+  tenantLeavePolicy TenantLeavePolicy?
   documents     Document[]
   subscriptions Subscription[]
   notifications Notification[]
@@ -94,6 +97,7 @@ model User {
   tenants      TenantUser[]
   auditLogs    AuditLog[]   @relation("AuditActor")
   sessions     UserSession[]
+  linkedEmployees Employee[]
   payrollBfSimulations PayrollBfSimulation[]
 }
 
@@ -188,16 +192,21 @@ model Employee {
   departmentId String?
   positionId   String?
   hireDate     DateTime
+  linkedUserId String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   department   Department?    @relation(fields: [departmentId], references: [id])
   position     Position?      @relation(fields: [positionId], references: [id])
+  linkedUser   User?          @relation(fields: [linkedUserId], references: [id], onDelete: SetNull)
   contracts    Contract[]
   leaveRequests LeaveRequest[]
+  leavePaidAcquisitions LeavePaidAcquisition[]
+  paidLeaveBalance EmployeePaidLeaveBalance?
   documents    Document[]
 
   @@unique([tenantId, workEmail])
+  @@unique([tenantId, linkedUserId])
   @@index([tenantId, status])
 }
 
@@ -218,13 +227,14 @@ model Contract {
 }
 
 model LeaveType {
-  id          String   @id @default(cuid())
-  tenantId    String
-  code        String
-  label       String
-  defaultDays Int      @default(0)
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  requests    LeaveRequest[]
+  id                  String   @id @default(cuid())
+  tenantId            String
+  code                String
+  label               String
+  defaultDays         Int      @default(0)
+  deductsPaidBalance  Boolean  @default(false)
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  requests            LeaveRequest[]
 
   @@unique([tenantId, code])
 }
@@ -245,6 +255,54 @@ model LeaveRequest {
   leaveType    LeaveType          @relation(fields: [leaveTypeId], references: [id])
 
   @@index([tenantId, status])
+  @@index([tenantId, employeeId, status])
+}
+
+/// Politique congés payés BF par tenant (plafond report, taux mensuel).
+model TenantLeavePolicy {
+  id                          String   @id @default(cuid())
+  tenantId                    String   @unique
+  acquisitionRatePerFullMonth Decimal  @db.Decimal(4, 2) @default(2.5)
+  carryOverEnabled            Boolean  @default(true)
+  carryOverCapDays            Decimal  @db.Decimal(5, 1) @default(30.0)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+  tenant                      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+/// Snapshot métier : report manuel / expirations (les acquisitions sont dans LeavePaidAcquisition).
+model EmployeePaidLeaveBalance {
+  id               String   @id @default(cuid())
+  tenantId         String
+  employeeId       String   @unique
+  carriedOverDays  Decimal  @db.Decimal(7, 1) @default(0)
+  expiredCarryDays Decimal  @db.Decimal(7, 1) @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+/// Acquisition mensuelle idempotente (Burkina Faso : 2,5 j / mois proratisé jours calendaires).
+model LeavePaidAcquisition {
+  id                   String   @id @default(cuid())
+  tenantId             String
+  employeeId           String
+  year                 Int
+  month                Int
+  daysInMonth          Int
+  eligibleCalendarDays Int
+  rawAcquisition       Decimal  @db.Decimal(10, 6)
+  acquiredDays         Decimal  @db.Decimal(6, 1)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee             Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, employeeId, year, month])
+  @@index([tenantId, employeeId])
 }
 
 model Document {

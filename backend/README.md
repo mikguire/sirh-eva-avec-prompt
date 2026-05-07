@@ -72,13 +72,16 @@ backend/
    - `npm test`
 9. Couverture (seuil global lignes ≥ 48 %, voir `jest.config.cjs`) :
    - `npm run test:cov`
-10. Tests d’intégration (PostgreSQL requis, ex. `docker compose up -d --wait` + base `eva_test`) :
+10. **CI GitHub Actions** (`.github/workflows/backend-ci.yml`) :
+    - Job **unit-build** : `npm ci`, `prisma generate`, **`npm run build`**, **`npm run test:cov`** (même suite Jest que `npm test`, avec couverture — pas de Postgres).
+    - Job **integration-tests** (après succès du précédent) : Postgres 16 en service, puis **`npm run test:int`** (`migrate deploy` + seed + Jest intégration). En CI, **`SKIP_INT` n’est pas défini** — les tests d’intégration sont **obligatoires**.
+11. Tests d’intégration (PostgreSQL requis, ex. `docker compose up -d --wait` + base `eva_test`) :
    - `npm run test:integration` (alias conservé: `npm run test:int`)  
-   - Le script exécute automatiquement : **db check TCP** → **`prisma migrate deploy`** → **`prisma seed`** → **Jest integration**.
+  - Le script exécute automatiquement : **db check TCP + authentification** → **`prisma migrate deploy`** → **`prisma seed`** → **Jest integration**.
    - **`DATABASE_URL` pour l’intégration** : par défaut **`postgresql://postgres:postgres@127.0.0.1:5432/eva_test`** (aligné sur `docker-compose.yml`), pour éviter qu’un `DATABASE_URL` métier dans **`backend/.env`** ne fasse échouer la suite (**P1000**). Surcharge : **`INTEGRATION_DATABASE_URL`** (variable d’environnement).
    - **`backend/.env`** reste chargé pour JWT / Stripe / autres secrets ; seule l’URL Postgres des tests d’intégration suit la règle ci-dessus.
    - En cas d’échec **P1000 (Authentication failed)**, vérifiez que Postgres tourne (`docker compose up -d`) et que **`INTEGRATION_DATABASE_URL`** (si défini) correspond aux identifiants du conteneur (`EVA_POSTGRES_*`).
-   - Si la base n’est pas joignable, `npm run db:check` échoue avec une erreur actionnable (hôte/port visés + action Docker suggérée).  
+  - Si la base n’est pas joignable **ou** si les identifiants ne correspondent pas, `npm run db:check` échoue avec une erreur actionnable (URL masquée, hôte/port visés + action Docker suggérée).  
    - Sans Postgres local : **`SKIP_INT=1 npm run test:integration`** saute toute la suite (utile pour un contrôle rapide du pipeline sans Docker).
    - Scénarios sécurité/conformité couverts: auth nominale + rotation refresh (ancien token invalide), isolement tenant (`x-tenant-id` vs JWT), refus RBAC (`payroll.simulate`), rejet webhook Stripe signature invalide, et simulation paie BF (champs métier attendus).
 

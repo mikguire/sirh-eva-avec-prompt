@@ -205,6 +205,47 @@ describeIntegration("Integration (HTTP + DB)", () => {
     expect(res.body.status).toBe("PENDING");
   });
 
+  it("GET /leave-balances/me returns accrued BF paid leave for linked employee", async () => {
+    const login = await request(app.getHttpServer())
+      .post("/api/v1/auth/login")
+      .send({
+        email: world!.userEmail,
+        password: world!.userPassword,
+        tenantId: world!.tenantId
+      })
+      .expect(200);
+
+    const token = login.body.accessToken as string;
+    const res = await request(app.getHttpServer())
+      .get("/api/v1/leave-balances/me")
+      .set("Authorization", `Bearer ${token}`)
+      .set("x-tenant-id", world!.tenantId)
+      .expect(200);
+
+    expect(typeof res.body.accruedPaidDays).toBe("number");
+    expect(res.body.accruedPaidDays).toBeGreaterThan(0);
+    expect(typeof res.body.availablePaidDays).toBe("number");
+    expect(res.body.syncedThroughYearMonth).toMatch(/^\d{4}-\d{2}$/);
+  });
+
+  it("GET /leave-balances/me returns 403 without leave.balance.read permission", async () => {
+    const login = await request(app.getHttpServer())
+      .post("/api/v1/auth/login")
+      .send({
+        email: world!.limitedUserEmail,
+        password: world!.limitedUserPassword,
+        tenantId: world!.tenantId
+      })
+      .expect(200);
+
+    const token = login.body.accessToken as string;
+    await request(app.getHttpServer())
+      .get("/api/v1/leave-balances/me")
+      .set("Authorization", `Bearer ${token}`)
+      .set("x-tenant-id", world!.tenantId)
+      .expect(403);
+  });
+
   it("POST /billing/webhook accepts valid Stripe signature without JWT", async () => {
     const eventId = `evt_integration_${Date.now()}`;
     const rawBody = JSON.stringify({
@@ -227,7 +268,7 @@ describeIntegration("Integration (HTTP + DB)", () => {
       .post("/api/v1/billing/webhook")
       .set("stripe-signature", sig)
       .set("Content-Type", "application/json")
-      .send(Buffer.from(rawBody, "utf8"));
+      .send(rawBody);
 
     if (res.status !== 200) {
       throw new Error(`webhook debug ${res.status}: ${JSON.stringify(res.body)}`);
@@ -246,7 +287,7 @@ describeIntegration("Integration (HTTP + DB)", () => {
       .post("/api/v1/billing/webhook")
       .set("stripe-signature", "t=1,v1=deadbeef")
       .set("Content-Type", "application/json")
-      .send(Buffer.from(rawBody, "utf8"))
+      .send(rawBody)
       .expect(401);
 
     expect(String(res.headers["content-type"])).toContain("application/problem+json");

@@ -5,6 +5,9 @@ ALTER TABLE "Document" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "AuditLog" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Subscription" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Notification" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "TenantLeavePolicy" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "EmployeePaidLeaveBalance" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "LeavePaidAcquisition" ENABLE ROW LEVEL SECURITY;
 
 -- App sets this each request:
 -- SET app.current_tenant = '<tenant-id>';
@@ -25,4 +28,13 @@ CREATE POLICY tenant_subscription_policy ON "Subscription"
   USING ("tenantId" = current_setting('app.current_tenant', true));
 
 CREATE POLICY tenant_notification_policy ON "Notification"
+  USING ("tenantId" = current_setting('app.current_tenant', true));
+
+CREATE POLICY tenant_leave_policy_bf_policy ON "TenantLeavePolicy"
+  USING ("tenantId" = current_setting('app.current_tenant', true));
+
+CREATE POLICY tenant_employee_paid_leave_balance_policy ON "EmployeePaidLeaveBalance"
+  USING ("tenantId" = current_setting('app.current_tenant', true));
+
+CREATE POLICY tenant_leave_paid_acquisition_policy ON "LeavePaidAcquisition"
   USING ("tenantId" = current_setting('app.current_tenant', true));

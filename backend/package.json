@@ -10,6 +10,7 @@
     "test": "jest",
     "test:cov": "jest --coverage",
     "db:check": "node scripts/check-db-access.cjs",
+    "db:check:integration": "sh -c 'export DATABASE_URL=\"${INTEGRATION_DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:5432/eva_test}\"; npm run db:check'",
     "test:integration:prepare": "sh -c 'export DATABASE_URL=\"${INTEGRATION_DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:5432/eva_test}\"; npm run db:check && npm run prisma:migrate:deploy && npm run prisma:seed'",
     "test:integration": "npm run test:integration:prepare && jest --config jest.integration.config.cjs --runInBand",
     "test:int": "npm run test:integration",

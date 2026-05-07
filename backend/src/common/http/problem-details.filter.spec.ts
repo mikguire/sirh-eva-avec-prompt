@@ -1,4 +1,10 @@
-import { ArgumentsHost, HttpStatus, Logger, UnauthorizedException } from "@nestjs/common";
+import {
+  ArgumentsHost,
+  ConflictException,
+  HttpStatus,
+  Logger,
+  UnauthorizedException
+} from "@nestjs/common";
 import { ThrottlerException } from "@nestjs/throttler";
 import { ProblemDetailsExceptionFilter } from "./problem-details.filter";
 
@@ -31,6 +37,40 @@ describe("ProblemDetailsExceptionFilter", () => {
         status: HttpStatus.UNAUTHORIZED,
         detail: "Invalid credentials",
         instance: "/api/v1/auth/login"
+      })
+    );
+  });
+
+  it("propagates ev:code from HttpException payload", () => {
+    const filter = new ProblemDetailsExceptionFilter();
+    const json = jest.fn();
+    const status = jest.fn().mockReturnValue({ json });
+    const setHeader = jest.fn().mockReturnValue({ status });
+    const response = { setHeader, status };
+    const request = {
+      originalUrl: "/api/v1/leave-requests/x/approve",
+      url: "/api/v1/leave-requests/x/approve"
+    };
+    const host = {
+      switchToHttp: () => ({
+        getResponse: () => response,
+        getRequest: () => request
+      })
+    } as unknown as ArgumentsHost;
+
+    filter.catch(
+      new ConflictException({
+        message: "Solde insuffisant",
+        "ev:code": "EV_LEAVE_INSUFFICIENT_BALANCE"
+      }),
+      host
+    );
+
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: HttpStatus.CONFLICT,
+        "ev:code": "EV_LEAVE_INSUFFICIENT_BALANCE",
+        detail: "Solde insuffisant"
       })
     );
   });
