@@ -12,6 +12,8 @@ Il distingue explicitement:
 
 Le suivi des changements reglémentaires est historise dans `docs/compliance-bf-changelog.md`.
 
+Pack de validation formelle: `docs/compliance-bf-signoff-packet.md`.
+
 ## 2) Parametres CONFIRMES (executables QA)
 
 ### 2.1 CNSS
