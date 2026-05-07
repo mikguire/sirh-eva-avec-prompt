@@ -14,7 +14,7 @@ Agent: **AGENT_QA_RELEASE_CI**. Objectif: CI release backend, couverture unitair
 ## Couverture unitaire (jest `--coverage`, 2026-05-06)
 
 Seuils globaux (`jest.config.cjs`) : branches ≥ 32 %, fonctions ≥ 45 %, lignes/statements ≥ 48 %.  
-Mesure locale : **All files ~70 % statements / ~69 % lines** (au-dessus des seuils).
+Mesure locale (mise à jour 2026-05-07) : **All files 75.8 % statements / 74.85 % lines / 56.52 % branches / 74.43 % functions** (au-dessus des seuils).
 
 | Zone (répertoires `src`) | Couverture observée (ordre de grandeur) | Verdict | Actions suivantes |
 |--------------------------|----------------------------------------|---------|-------------------|
@@ -24,14 +24,16 @@ Mesure locale : **All files ~70 % statements / ~69 % lines** (au-dessus des seui
 | **employees** (`modules/employees`) | **100 %** controller/service/DTO | **OK** | — |
 | **leave** (`modules/leave`) | **100 %** controller/service/DTO | **OK** | — |
 | **billing** (`modules/billing`) | Controllers forts ; `billing-webhook.service` branches **~33 %** | **Partiel** | Compléter branches métier (idempotence, erreurs Stripe) |
-| **payroll-bf** (`modules/payroll-bf`) | Calculator/service **OK** ; `payroll-bf.controller.ts` **0 %** ; DTO réponse **0 %** | **Partiel** | Spec controller HTTP ou renforcer intégration `payroll.simulate` |
+| **payroll-bf** (`modules/payroll-bf`) | Calculator/service **OK** ; `payroll-bf.controller.ts` désormais couvert (100 % lignes) ; DTO réponse **0 %** | **Partiel** | Garder le spec controller ; compléter DTOs au fil des évolutions. |
 
 ## Gaps transverses (hors tableau modules)
 
 - **`prisma/prisma.service.ts`** : faible couverture (logique `$extends` / transactions) — acceptable si sécurisé par **tests d’intégration** ; à surveiller lors des montées Prisma.
-- **Contrôleurs sans spec unitaire** : `admin.controller`, `audit`, `files`, `notifications`, `payroll-bf` — risque réduit si E2E/intégration couvrent les routes critique ; sinon ajouter specs ciblées.
+- **Contrôleurs encore sans spec unitaire** : `admin.controller`, `notifications.controller` (audit/files/payroll-bf désormais couverts).
 
 ## Références
 
 - `backend/README.md` — commandes `npm test`, `npm run test:cov`, `test:integration` / `SKIP_INT=1`.
 - `backend/jest.config.cjs` — seuils et `collectCoverageFrom`.
+
+- 2026-05-07 : Ajout de specs unitaires controllers audit, files, payroll-bf ; couverture globale portée à 75.8% statements / 74.85% lines.
